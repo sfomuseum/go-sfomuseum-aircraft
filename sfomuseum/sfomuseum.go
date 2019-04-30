@@ -1,4 +1,4 @@
-package icao
+package sfomuseum
 
 import (
 	"encoding/json"
@@ -10,18 +10,11 @@ import (
 )
 
 type Aircraft struct {
-	ModelFullName       string
-	Description         string
-	WTC                 string
-	Designator          string
-	ManufacturerCode    string
-	AircraftDescription string
-	EngineCount         string
-	EngineType          string
-}
-
-func (a *Aircraft) String() string {
-	return fmt.Sprintf("%s %s %s", a.ManufacturerCode, a.Designator, a.ModelFullName)
+	WOFID          int64  `json:"wof:id"`
+	Name           string `json""wof:name"`
+	SFOMuseumID    int    `json:"sfomuseum:aircraft_id"`
+	ICAODesignator string `json:icao:designator,omitempty"`
+	WikidataID     string `json:"wd:id,omitempty"`
 }
 
 var lookup_table *sync.Map
@@ -53,8 +46,8 @@ func NewLookup() (*Lookup, error) {
 			table.Store(pointer, craft)
 
 			possible_codes := []string{
-				craft.Designator,
-				craft.ManufacturerCode,
+				craft.ICAODesignator,
+				craft.WOFID,
 			}
 
 			for _, code := range possible_codes {

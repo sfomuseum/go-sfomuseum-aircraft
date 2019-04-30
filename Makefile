@@ -30,6 +30,7 @@ fmt:
 	go fmt *.go
 	go fmt cmd/*.go
 	go fmt icao/*.go
+	go fmt sfomuseum/*.go
 
 bin: 	self
 	rm -rf bin/*
