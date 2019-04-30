@@ -67,3 +67,4 @@ If you pass the `-source sfomuseum` flag you can lookup aircraft by their SFO Mu
 
 * https://millsfield.sfomuseum.org/aircraft
 * https://millsfield.sfomuseum.org/blog/2018/12/03/airlines/
+* https://www.icao.int/publications/DOC8643/Pages/Search.aspx
