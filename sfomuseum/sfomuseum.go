@@ -12,9 +12,9 @@ import (
 
 type Aircraft struct {
 	WOFID          int64  `json:"wof:id"`
-	Name           string `json""wof:name"`
+	Name           string `json:"wof:name"`
 	SFOMuseumID    int    `json:"sfomuseum:aircraft_id"`
-	ICAODesignator string `json:icao:designator,omitempty"`
+	ICAODesignator string `json:"icao:designator,omitempty"`
 	WikidataID     string `json:"wd:id,omitempty"`
 }
 
