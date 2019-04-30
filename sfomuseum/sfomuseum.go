@@ -31,7 +31,7 @@ func NewLookup() (*Lookup, error) {
 
 		var aircraft []*Aircraft
 
-		err := json.Unmarshal([]byte(Doc8643), &aircraft)
+		err := json.Unmarshal([]byte(AircraftData), &aircraft)
 
 		if err != nil {
 			lookup_err = err
