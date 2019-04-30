@@ -29,7 +29,8 @@ vendor-deps: rmdeps deps
 fmt:
 	go fmt *.go
 	go fmt cmd/*.go
+	go fmt icao/*.go
 
 bin: 	self
 	rm -rf bin/*
-	# @GOPATH=$(GOPATH) go build -o bin/lookup cmd/lookup.go
+	@GOPATH=$(GOPATH) go build -o bin/lookup cmd/lookup.go
