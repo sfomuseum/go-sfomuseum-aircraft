@@ -1,6 +1,6 @@
 # go-sfomuseum-aircraft
 
-Go package for working with aircraft, in an SFO Museum context.
+Go package for working with aircraft, in a SFO Museum context.
 
 ## Tools
 
