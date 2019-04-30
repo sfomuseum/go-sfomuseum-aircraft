@@ -4,6 +4,7 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+	_ "log"
 	"strings"
 	"sync"
 )
@@ -19,6 +20,10 @@ type AircraftType struct {
 	EngineType          string
 }
 
+func (a *AircraftType) String() string {
+	return fmt.Sprintf("%s %s %s", a.ManufacturerCode, a.Designator, a.ModelFullName)
+}
+
 var lookup_table *sync.Map
 var lookup_init sync.Once
 
@@ -31,7 +36,7 @@ func NewLookup() (*Lookup, error) {
 
 	lookup_func := func() {
 
-		var aircraft []AircraftType
+		var aircraft []*AircraftType
 
 		err := json.Unmarshal([]byte(Doc8643), &aircraft)
 
@@ -45,7 +50,7 @@ func NewLookup() (*Lookup, error) {
 		for idx, craft := range aircraft {
 
 			pointer := fmt.Sprintf("pointer:%d", idx)
-			table.Store(pointer, &craft)
+			table.Store(pointer, craft)
 
 			possible_codes := []string{
 				craft.Designator,
