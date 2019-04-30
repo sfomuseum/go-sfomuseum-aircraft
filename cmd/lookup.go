@@ -1,17 +1,31 @@
 package main
 
 import (
+	"errors"
 	"flag"
 	"fmt"
+	"github.com/sfomuseum/go-sfomuseum-aircraft"
 	"github.com/sfomuseum/go-sfomuseum-aircraft/icao"
+	"github.com/sfomuseum/go-sfomuseum-aircraft/sfomuseum"
 	"log"
 )
 
 func main() {
 
+	source := flag.String("source", "icao", "Valid sources are: icao, sfomuseum.")
 	flag.Parse()
 
-	l, err := icao.NewLookup()
+	var lookup aircraft.Lookup
+	var err error
+
+	switch *source {
+	case "icao":
+		lookup, err = icao.NewLookup()
+	case "sfomuseum":
+		lookup, err = sfomuseum.NewLookup()
+	default:
+		err = errors.New("Unknown source")
+	}
 
 	if err != nil {
 		log.Fatal(err)
@@ -19,13 +33,13 @@ func main() {
 
 	for _, code := range flag.Args() {
 
-		aircraft, err := l.Find(code)
+		results, err := lookup.Find(code)
 
 		if err != nil {
 			log.Fatal(err)
 		}
 
-		for _, a := range aircraft {
+		for _, a := range results {
 			fmt.Println(a)
 		}
 	}

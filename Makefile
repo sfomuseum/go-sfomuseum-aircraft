@@ -9,6 +9,7 @@ self:   prep rmdeps
 	mkdir -p src/github.com/sfomuseum/go-sfomuseum-aircraft
 	cp *.go src/github.com/sfomuseum/go-sfomuseum-aircraft/
 	cp -r icao src/github.com/sfomuseum/go-sfomuseum-aircraft/
+	cp -r sfomuseum src/github.com/sfomuseum/go-sfomuseum-aircraft/
 	# cp -r vendor/* src/
 
 rmdeps:

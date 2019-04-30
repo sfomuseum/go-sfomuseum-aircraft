@@ -4,6 +4,7 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+	"github.com/sfomuseum/go-sfomuseum-aircraft"
 	_ "log"
 	"strconv"
 	"strings"
@@ -18,13 +19,18 @@ type Aircraft struct {
 	WikidataID     string `json:"wd:id,omitempty"`
 }
 
+func (a *Aircraft) String() string {
+	return fmt.Sprintf("%d %s \"%s\"", a.WOFID, a.ICAODesignator, a.Name)
+}
+
 var lookup_table *sync.Map
 var lookup_init sync.Once
 
-type Lookup struct {
+type SFOMuseumLookup struct {
+	aircraft.Lookup
 }
 
-func NewLookup() (*Lookup, error) {
+func NewLookup() (aircraft.Lookup, error) {
 
 	var lookup_err error
 
@@ -97,11 +103,11 @@ func NewLookup() (*Lookup, error) {
 		return nil, lookup_err
 	}
 
-	l := Lookup{}
+	l := SFOMuseumLookup{}
 	return &l, nil
 }
 
-func (l *Lookup) Find(code string) ([]*Aircraft, error) {
+func (l *SFOMuseumLookup) Find(code string) ([]interface{}, error) {
 
 	pointers, ok := lookup_table.Load(code)
 
@@ -109,7 +115,7 @@ func (l *Lookup) Find(code string) ([]*Aircraft, error) {
 		return nil, errors.New("Not found")
 	}
 
-	aircraft := make([]*Aircraft, 0)
+	aircraft := make([]interface{}, 0)
 
 	for _, p := range pointers.([]string) {
 
