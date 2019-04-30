@@ -5,6 +5,7 @@ import (
 	"errors"
 	"fmt"
 	_ "log"
+	"strconv"
 	"strings"
 	"sync"
 )
@@ -45,9 +46,11 @@ func NewLookup() (*Lookup, error) {
 			pointer := fmt.Sprintf("pointer:%d", idx)
 			table.Store(pointer, craft)
 
+			str_wofid := strconv.FormatInt(craft.WOFID, 10)
+
 			possible_codes := []string{
 				craft.ICAODesignator,
-				craft.WOFID,
+				str_wofid,
 			}
 
 			for _, code := range possible_codes {
