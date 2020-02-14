@@ -12,7 +12,7 @@ import (
 
 func main() {
 
-	source := flag.String("source", "icao", "Valid sources are: icao, sfomuseum.")
+	source := flag.String("source", "sfomuseum", "Valid sources are: icao, sfomuseum.")
 	flag.Parse()
 
 	var lookup aircraft.Lookup
