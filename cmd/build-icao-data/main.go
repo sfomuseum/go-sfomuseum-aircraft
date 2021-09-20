@@ -2,8 +2,7 @@ package main
 
 import (
 	"flag"
-	"github.com/sfomuseum/go-sfomuseum-aircraft-tools/template"
-	"io/ioutil"
+	"io"
 	"log"
 	"net/http"
 	"os"
@@ -14,16 +13,35 @@ func main() {
 
 	// curl 'https://www4.icao.int/doc8643/External/AircraftTypes' -H 'Connection: keep-alive' --data ''
 
-	source := flag.String("source", "https://www4.icao.int/doc8643/External/AircraftTypes", "...")
+	source := flag.String("source", "https://www4.icao.int/doc8643/External/AircraftTypes", "The remote URL where ICAO data can be found.")
+
+	target := flag.String("target", "data/icao.json", "The path to write ICAO aircraft data.")
+	stdout := flag.Bool("stdout", false, "Emit ICAO aircraft data to SDOUT.")
 
 	flag.Parse()
+
+	writers := make([]io.Writer, 0)
+
+	fh, err := os.OpenFile(*target, os.O_RDWR|os.O_CREATE, 0644)
+
+	if err != nil {
+		log.Fatalf("Failed to open '%s', %v", *target, err)
+	}
+
+	writers = append(writers, fh)
+
+	if *stdout {
+		writers = append(writers, os.Stdout)
+	}
+
+	wr := io.MultiWriter(writers...)
 
 	data := strings.NewReader("")
 
 	req, err := http.NewRequest("POST", *source, data)
 
 	if err != nil {
-		log.Fatal(err)
+		log.Fatalf("Failed to create new request for '%s', %v", *source, err)
 	}
 
 	req.Header.Set("Connection", "keep-alive")
@@ -32,29 +50,18 @@ func main() {
 	rsp, err := cl.Do(req)
 
 	if err != nil {
-		log.Fatal(err)
+		log.Fatalf("Failed to request data, %v", err)
 	}
 
 	defer rsp.Body.Close()
 
 	if rsp.StatusCode != 200 {
-		log.Fatal(rsp.Status)
+		log.Fatalf("Remote server returned an error, %v", rsp.Status)
 	}
 
-	body, err := ioutil.ReadAll(rsp.Body)
+	_, err = io.Copy(wr, rsp.Body)
 
 	if err != nil {
-		log.Fatal(err)
-	}
-
-	vars := template.AircraftDataVars{
-		Package: "icao",
-		Data:    string(body),
-	}
-
-	err = template.RenderAircraftData(os.Stdout, &vars)
-
-	if err != nil {
-		log.Fatal(err)
+		log.Fatalf("Failed to write data, %v", err)
 	}
 }
