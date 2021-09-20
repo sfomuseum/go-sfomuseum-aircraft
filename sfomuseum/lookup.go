@@ -1,9 +1,9 @@
 package sfomuseum
 
 import (
+	"bytes"
 	"context"
 	"encoding/json"
-	"errors"
 	"fmt"
 	"github.com/sfomuseum/go-sfomuseum-aircraft"
 	"github.com/sfomuseum/go-sfomuseum-aircraft/data"
@@ -104,12 +104,34 @@ func NewLookupWithLookupFunc(ctx context.Context, lookup_func SFOMuseumLookupFun
 	return &l, nil
 }
 
+func NewLookupFromIterator(ctx context.Context, iterator_uri string, iterator_sources ...string) (aircraft.Lookup, error) {
+
+	aircraft_data, err := CompileAircraftData(ctx, iterator_uri, iterator_sources...)
+
+	if err != nil {
+		return nil, fmt.Errorf("Failed to compile aircraft data, %w", err)
+	}
+
+	// necessary until there is a NewLookupFuncWithAircraft method
+	enc_data, err := json.Marshal(aircraft_data)
+
+	if err != nil {
+		return nil, fmt.Errorf("Failed to marshal aircraft data, %w", err)
+	}
+
+	r := bytes.NewReader(enc_data)
+	rc := io.NopCloser(r)
+
+	lookup_func := NewLookupFuncWithReader(ctx, rc)
+	return NewLookupWithLookupFunc(ctx, lookup_func)
+}
+
 func (l *SFOMuseumLookup) Find(ctx context.Context, code string) ([]interface{}, error) {
 
 	pointers, ok := lookup_table.Load(code)
 
 	if !ok {
-		return nil, errors.New("Not found")
+		return nil, fmt.Errorf("Code '%s' not found", code)
 	}
 
 	aircraft := make([]interface{}, 0)
@@ -117,13 +139,13 @@ func (l *SFOMuseumLookup) Find(ctx context.Context, code string) ([]interface{},
 	for _, p := range pointers.([]string) {
 
 		if !strings.HasPrefix(p, "pointer:") {
-			return nil, errors.New("Invalid pointer")
+			return nil, fmt.Errorf("Invalid pointer '%s'", p)
 		}
 
 		row, ok := lookup_table.Load(p)
 
 		if !ok {
-			return nil, errors.New("Invalid pointer")
+			return nil, fmt.Errorf("Invalid pointer '%s'", p)
 		}
 
 		aircraft = append(aircraft, row.(*Aircraft))
