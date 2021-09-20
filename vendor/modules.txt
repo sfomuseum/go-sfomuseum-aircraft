@@ -21,8 +21,6 @@ github.com/sfomuseum/go-edtf/level2
 github.com/sfomuseum/go-edtf/parser
 github.com/sfomuseum/go-edtf/re
 github.com/sfomuseum/go-edtf/tests
-# github.com/sfomuseum/go-sfomuseum-aircraft-tools v0.2.0
-## explicit
 # github.com/sfomuseum/go-sfomuseum-geojson v0.1.2
 ## explicit
 github.com/sfomuseum/go-sfomuseum-geojson/feature
