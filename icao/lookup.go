@@ -1,6 +1,7 @@
 package icao
 
 import (
+	"context"
 	"encoding/json"
 	"errors"
 	"fmt"
@@ -16,14 +17,19 @@ var lookup_table *sync.Map
 var lookup_init sync.Once
 var lookup_init_err error
 
-type ICAOLookupFunc func()
+type ICAOLookupFunc func(context.Context)
 
 type ICAOLookup struct {
 	aircraft.Lookup
 }
 
+func init() {
+	ctx := context.Background()
+	aircraft.RegisterLookup(ctx, "icao", NewLookup)
+}
+
 // NewLookup will return an `aircraft.Lookup` instance derived from precompiled (embedded) data in `data/icao.json`
-func NewLookup() (aircraft.Lookup, error) {
+func NewLookup(ctx context.Context, uri string) (aircraft.Lookup, error) {
 
 	fs := data.FS
 	fh, err := fs.Open("icao.json")
@@ -32,16 +38,16 @@ func NewLookup() (aircraft.Lookup, error) {
 		return nil, fmt.Errorf("Failed to load data, %v", err)
 	}
 
-	lookup_func := NewLookupFuncWithReader(fh)
-	return NewLookupWithLookupFunc(lookup_func)
+	lookup_func := NewLookupFuncWithReader(ctx, fh)
+	return NewLookupWithLookupFunc(ctx, lookup_func)
 }
 
 // NewLookup will return an `ICAOLookupFunc` function instance that, when invoked, will populate an `aircraft.Lookup` instance with data stored in `r`.
 // `r` will be closed when the `ICAOLookupFunc` function instance is invoked.
 // It is assumed that the data in `r` will be formatted in the same way as the procompiled (embedded) data stored in `data/icao.json`.
-func NewLookupFuncWithReader(r io.ReadCloser) ICAOLookupFunc {
+func NewLookupFuncWithReader(ctx context.Context, r io.ReadCloser) ICAOLookupFunc {
 
-	lookup_func := func() {
+	lookup_func := func(ctx context.Context) {
 
 		defer r.Close()
 
@@ -58,6 +64,13 @@ func NewLookupFuncWithReader(r io.ReadCloser) ICAOLookupFunc {
 		table := new(sync.Map)
 
 		for idx, craft := range aircraft {
+
+			select {
+			case <-ctx.Done():
+				return
+			default:
+				// pass
+			}
 
 			pointer := fmt.Sprintf("pointer:%d", idx)
 			table.Store(pointer, craft)
@@ -109,9 +122,13 @@ func NewLookupFuncWithReader(r io.ReadCloser) ICAOLookupFunc {
 }
 
 // NewLookupWithLookupFunc will return an `aircraft.Lookup` instance derived by data compiled using `lookup_func`.
-func NewLookupWithLookupFunc(lookup_func ICAOLookupFunc) (aircraft.Lookup, error) {
+func NewLookupWithLookupFunc(ctx context.Context, lookup_func ICAOLookupFunc) (aircraft.Lookup, error) {
 
-	lookup_init.Do(lookup_func)
+	fn := func() {
+		lookup_func(ctx)
+	}
+
+	lookup_init.Do(fn)
 
 	if lookup_init_err != nil {
 		return nil, lookup_init_err
