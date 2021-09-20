@@ -12,8 +12,8 @@ import (
 // (20190430/thisisaaronland)
 
 type Lookup interface {
-	Find(string) ([]interface{}, error)
-	// Append(string, interface{}) error
+	Find(context.Context, string) ([]interface{}, error)
+	Append(context.Context, interface{}) error
 }
 
 var lookup_roster roster.Roster
