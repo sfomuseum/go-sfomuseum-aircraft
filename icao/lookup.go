@@ -6,56 +6,52 @@ import (
 	"fmt"
 	"github.com/sfomuseum/go-sfomuseum-aircraft"
 	"github.com/sfomuseum/go-sfomuseum-aircraft/data"
+	"io"
 	_ "log"
 	"strings"
 	"sync"
 )
 
-type Aircraft struct {
-	ModelFullName       string
-	Description         string
-	WTC                 string
-	Designator          string
-	ManufacturerCode    string
-	AircraftDescription string
-	EngineCount         string
-	EngineType          string
-}
-
-func (a *Aircraft) String() string {
-	return fmt.Sprintf("%s %s \"%s\"", a.ManufacturerCode, a.Designator, a.ModelFullName)
-}
-
 var lookup_table *sync.Map
 var lookup_init sync.Once
+var lookup_init_err error
+
+type ICAOLookupFunc func()
 
 type ICAOLookup struct {
 	aircraft.Lookup
 }
 
+// NewLookup will return an `aircraft.Lookup` instance derived from precompiled (embedded) data in `data/icao.json`
 func NewLookup() (aircraft.Lookup, error) {
 
-	var lookup_err error
+	fs := data.FS
+	fh, err := fs.Open("icao.json")
+
+	if err != nil {
+		return nil, fmt.Errorf("Failed to load data, %v", err)
+	}
+
+	lookup_func := NewLookupFuncWithReader(fh)
+	return NewLookupWithLookupFunc(lookup_func)
+}
+
+// NewLookup will return an `ICAOLookupFunc` function instance that, when invoked, will populate an `aircraft.Lookup` instance with data stored in `r`.
+// `r` will be closed when the `ICAOLookupFunc` function instance is invoked.
+// It is assumed that the data in `r` will be formatted in the same way as the procompiled (embedded) data stored in `data/icao.json`.
+func NewLookupFuncWithReader(r io.ReadCloser) ICAOLookupFunc {
 
 	lookup_func := func() {
 
-		fs := data.FS
-		fh, err := fs.Open("icao.json")
-
-		if err != nil {
-			lookup_err = err
-			return
-		}
-
-		defer fh.Close()
+		defer r.Close()
 
 		var aircraft []*Aircraft
 
-		dec := json.NewDecoder(fh)
-		err = dec.Decode(&aircraft)
+		dec := json.NewDecoder(r)
+		err := dec.Decode(&aircraft)
 
 		if err != nil {
-			lookup_err = err
+			lookup_init_err = err
 			return
 		}
 
@@ -109,10 +105,16 @@ func NewLookup() (aircraft.Lookup, error) {
 		lookup_table = table
 	}
 
+	return lookup_func
+}
+
+// NewLookupWithLookupFunc will return an `aircraft.Lookup` instance derived by data compiled using `lookup_func`.
+func NewLookupWithLookupFunc(lookup_func ICAOLookupFunc) (aircraft.Lookup, error) {
+
 	lookup_init.Do(lookup_func)
 
-	if lookup_err != nil {
-		return nil, lookup_err
+	if lookup_init_err != nil {
+		return nil, lookup_init_err
 	}
 
 	l := ICAOLookup{}
