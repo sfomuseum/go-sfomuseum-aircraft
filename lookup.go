@@ -7,4 +7,5 @@ package aircraft
 
 type Lookup interface {
 	Find(string) ([]interface{}, error)
+	// Append(string, interface{}) error
 }

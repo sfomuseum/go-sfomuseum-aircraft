@@ -4,8 +4,7 @@ import (
 	"context"
 	"encoding/json"
 	"flag"
-	tools "github.com/sfomuseum/go-sfomuseum-aircraft-tools"
-	"github.com/sfomuseum/go-sfomuseum-aircraft-tools/template"
+	"github.com/sfomuseum/go-sfomuseum-aircraft/sfomuseum"
 	"log"
 	"os"
 )
@@ -19,7 +18,7 @@ func main() {
 
 	ctx := context.Background()
 
-	lookup, err := tools.CompileAircraftData(ctx, *iterator_uri, *iterator_source)
+	lookup, err := sfomuseum.CompileAircraftData(ctx, *iterator_uri, *iterator_source)
 
 	if err != nil {
 		log.Fatalf("Failed to compile aircraft data, %v", err)
