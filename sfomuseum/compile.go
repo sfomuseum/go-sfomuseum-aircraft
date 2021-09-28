@@ -16,9 +16,9 @@ import (
 // CompileAircraftData will generate a list of `Aircraft` struct to be used as the source data for an `SFOMuseumLookup` instance.
 // The list of aircraft are compiled by iterating over one or more source. `iterator_uri` is a valid `whosonfirst/go-whosonfirst-iterate` URI
 // and `iterator_sources` are one more (iterator) URIs to process.
-func CompileAircraftData(ctx context.Context, iterator_uri string, iterator_sources ...string) ([]Aircraft, error) {
+func CompileAircraftData(ctx context.Context, iterator_uri string, iterator_sources ...string) ([]*Aircraft, error) {
 
-	lookup := make([]Aircraft, 0)
+	lookup := make([]*Aircraft, 0)
 	mu := new(sync.RWMutex)
 
 	iter_cb := func(ctx context.Context, fh io.ReadSeeker, args ...interface{}) error {
@@ -65,7 +65,7 @@ func CompileAircraftData(ctx context.Context, iterator_uri string, iterator_sour
 			return err
 		}
 
-		a := Aircraft{
+		a := &Aircraft{
 			WOFID:       wof_id,
 			SFOMuseumID: int(sfom_id),
 			Name:        name,

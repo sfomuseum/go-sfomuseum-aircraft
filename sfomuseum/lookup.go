@@ -1,7 +1,6 @@
 package sfomuseum
 
 import (
-	"bytes"
 	"context"
 	"encoding/json"
 	"fmt"
@@ -53,23 +52,33 @@ func NewLookup(ctx context.Context, uri string) (aircraft.Lookup, error) {
 // It is assumed that the data in `r` will be formatted in the same way as the procompiled (embedded) data stored in `data/sfomuseum.json`.
 func NewLookupFuncWithReader(ctx context.Context, r io.ReadCloser) SFOMuseumLookupFunc {
 
-	lookup_func := func(ctx context.Context) {
+	defer r.Close()
 
-		defer r.Close()
+	var aircraft_list []*Aircraft
 
-		var aircraft []*Aircraft
+	dec := json.NewDecoder(r)
+	err := dec.Decode(&aircraft_list)
 
-		dec := json.NewDecoder(r)
-		err := dec.Decode(&aircraft)
+	if err != nil {
 
-		if err != nil {
+		lookup_func := func(ctx context.Context) {
 			lookup_init_err = err
-			return
 		}
+
+		return lookup_func
+	}
+
+	return NewLookupFuncWithAircraft(ctx, aircraft_list)
+}
+
+// NewLookup will return an `SFOMuseumLookupFunc` function instance that, when invoked, will populate an `aircraft.Lookup` instance with data stored in `aircraft_list`.
+func NewLookupFuncWithAircraft(ctx context.Context, aircraft_list []*Aircraft) SFOMuseumLookupFunc {
+
+	lookup_func := func(ctx context.Context) {
 
 		table := new(sync.Map)
 
-		for _, data := range aircraft {
+		for _, data := range aircraft_list {
 
 			select {
 			case <-ctx.Done():
@@ -112,17 +121,7 @@ func NewLookupFromIterator(ctx context.Context, iterator_uri string, iterator_so
 		return nil, fmt.Errorf("Failed to compile aircraft data, %w", err)
 	}
 
-	// necessary until there is a NewLookupFuncWithAircraft method
-	enc_data, err := json.Marshal(aircraft_data)
-
-	if err != nil {
-		return nil, fmt.Errorf("Failed to marshal aircraft data, %w", err)
-	}
-
-	r := bytes.NewReader(enc_data)
-	rc := io.NopCloser(r)
-
-	lookup_func := NewLookupFuncWithReader(ctx, rc)
+	lookup_func := NewLookupFuncWithAircraft(ctx, aircraft_data)
 	return NewLookupWithLookupFunc(ctx, lookup_func)
 }
 
